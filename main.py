@@ -18,5 +18,5 @@ def print_hi(string):
 if __name__ == '__main__':
 
 
-    mainOperation()
+    # mainOperation()
     print_hi('Hi there!')
