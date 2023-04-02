@@ -1,6 +1,6 @@
 
 def mainConsole():
-    pass
+    print("Running Main Console")
 
 def print_hi(string):
     print(string)
