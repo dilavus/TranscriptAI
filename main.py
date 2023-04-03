@@ -1,3 +1,4 @@
+
 import os
 import shutil
 import subprocess
@@ -6,9 +7,8 @@ import optparse
 import time
 import datetime
 import filetype as filetype
-import traceback
 import openai
-# import concurrent.futures
+
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 from pydub import AudioSegment
@@ -258,7 +258,7 @@ def createOutput(FILENAME, STRING_LIST, script_path, total_snippets, section_sta
 
     with open(script_path + "/" + OUTPUT_FILENAME, "a") as f:
         for line in OUTPUT_LIST:
-            f.write(line)
+            f.write(line.encode('utf-8').decode('ascii', 'ignore'))
     f.close()
 
 
@@ -303,6 +303,7 @@ def runOperations(INPUT_FILE, script_path, thread_count, keep_wav, silence_detec
         keep_wav = True
         new_sound = input_file.sound
         operation_extension = None
+
     wav_file = WavFile(input_file.filename, new_sound, script_path, recommended_section_length, operation_extension)
 
     if check_required:
@@ -374,9 +375,8 @@ def runOperations(INPUT_FILE, script_path, thread_count, keep_wav, silence_detec
         runTranscription(split_wav, thread_count, TEMP_FILE, total_snippets, lang)
 
     checkSuccess(total_snippets, STRING_LIST)
-    # checkSuccess(total_snippets, TEMP_FILE)
+
     organizeTemp(TEMP_FILE, STRING_LIST)
-    # organizeTemp(TEMP_FILE, script_path)
 
     print(" [!]Transcription successful")
     createOutput(input_file.filename, STRING_LIST, script_path, total_snippets, section_starts)
@@ -441,48 +441,27 @@ def checkSuccess(total_snippets, string_list):
     all the transcription lines are completed
     """
     print(" [+]Writing transcription to file...")
-    line_count = 0
     while True:
         time.sleep(2)
-        line_count = 0
         if len(string_list) == int(total_snippets):
             break
     return
 
-
-# def organizeTemp(TEMP_FILE, script_path):
-#     output_list = []
-#
-#     with open(TEMP_FILE, "r") as f:
-#         for line in f:
-#             output_list.append(line)
-#     f.close()
-#     output_list.sort()
-#     os.remove(TEMP_FILE)
-#     with open(TEMP_FILE, "a") as temp:
-#         for line in output_list:
-#             temp.write(line)
-#     temp.close()
 
 def organizeTemp(TEMP_FILE, string_list):
     output_list = string_list
 
     output_list.sort()
     os.remove(TEMP_FILE)
-    with open(TEMP_FILE, "a") as temp:
-        for line in output_list:
-            temp.write(line)
-    temp.close()
+
 
 def transcribe(snippet, lang):
     try:
-        # file = open(snippet, "rb")
-        # transcription = openai.Audio.transcribe("whisper-1", file)
-        # text_string = transcription.text
-        text_string = snippet
-        time.sleep(1)
-    except:
-        text_string = "!!!ERROR processing audio!!!"
+        file = open(snippet, "rb")
+        transcription = openai.Audio.transcribe("whisper-1", file)
+        text_string = transcription.text
+    except Exception:
+        text_string = "!!!ERROR processing audio by OpenAI Whisper-1!!!"
 
     return text_string
 
@@ -493,7 +472,7 @@ def timeit(method):
         start_time = time.time()
         result = method(*args, **kwargs)
         end_time = time.time()
-        print(f"{method.__name__} => {(end_time - start_time) * 1000} ms")
+        print(f" [!]{method.__name__} => {(end_time - start_time) * 1000} ms")
 
         return result
 
@@ -528,11 +507,6 @@ def runTranscription(split_wav, thread_count, TEMP_FILE, total_snippets, lang, s
                     working_list.append(split_wav[i])
                 for i in working_list:
                     del split_wav[0]
-
-                # with concurrent.futures.ThreadPoolExecutor(max_workers=thread_count) as executor:
-                #     for snippet in working_list:
-                #         line_count += 1
-                #         results = executor.submit(transcribeAudio, snippet, line_count, TEMP_FILE, total_snippets, pbar, lang)
 
                 with ThreadPoolExecutor(max_workers=thread_count) as executor:
                     for snippet in working_list:
@@ -627,7 +601,7 @@ def mainAI():
                 exit()
 
     openai.organization = "org-cUglEaGuH6dQ1kt5uQ9Vtghi"
-    openai.api_key = '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'
+    openai.api_key = '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'
     try:
         openai.Model.list()
     except openai.error.AuthenticationError:
