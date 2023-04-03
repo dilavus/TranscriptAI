@@ -331,7 +331,7 @@ def runOperations(INPUT_FILE, script_path, thread_count, keep_wav, silence_detec
         silence_detection = False
     else:
         if silence_detection:
-            min_silence_len = 1000
+            min_silence_len = 500
             print(" [+]Detecting silence sections...")
             while True:
                 silence_found, silence_ranges = detectSilence(wav_file.sound, wav_file.estimated_sections,
@@ -376,7 +376,7 @@ def runOperations(INPUT_FILE, script_path, thread_count, keep_wav, silence_detec
 
     checkSuccess(total_snippets, STRING_LIST)
 
-    organizeTemp(TEMP_FILE, STRING_LIST)
+    organizeTemp(STRING_LIST)
 
     print(" [!]Transcription successful")
     createOutput(input_file.filename, STRING_LIST, script_path, total_snippets, section_starts)
@@ -384,9 +384,9 @@ def runOperations(INPUT_FILE, script_path, thread_count, keep_wav, silence_detec
     """
     Clean Up Operations
     """
-    if keep_wav == True:
+    if keep_wav:
         cleanUp(script_path, 'None')
-    elif keep_wav == False:
+    elif not keep_wav:
         cleanUp(script_path, input_file.filename, DELETE_CONVERT=True)
 
     print("-------------------------------")
@@ -397,7 +397,7 @@ def runOperations(INPUT_FILE, script_path, thread_count, keep_wav, silence_detec
     print("-------------------------------")
 
 
-def transcribeAudio(snippet, line_count, TEMP_FILE, total_snippets, pbar, lang='uk', single_file=False):
+def transcribeAudio(snippet, line_count, STRING_LIST, total_snippets, pbar, lang='uk', single_file=False):
     """Transcribes the audio input file/snippets and writes to a temp file"""
 
     if single_file:
@@ -409,32 +409,10 @@ def transcribeAudio(snippet, line_count, TEMP_FILE, total_snippets, pbar, lang='
         line_count = str(dummy_zeros) + str(line_count)
         text = transcribe(snippet, lang)
         text_string = str(line_count) + "- " + text
-        STRING_LIST.append(text_string+ '\n')
-    with open(TEMP_FILE, "a") as f:
-        f.write(text_string + "\n")
-
-    f.close()
+        STRING_LIST.append(text_string + '\n')
     pbar.update(1)
 
 
-# def checkSuccess(total_snippets, TEMP_FILE):
-#     """
-#     There is a delay in outputing transcription to file this loop runs until
-#     all the transcription lines are completed
-#     """
-#     print(" [+]Writing transcription to file...")
-#     line_count = 0
-#     while True:
-#         time.sleep(2)
-#         line_count = 0
-#         with open(TEMP_FILE, "r") as f:
-#             for line in f:
-#                 line_count += 1
-#         if int(line_count) == int(total_snippets):
-#             f.close()
-#             break
-#         f.close()
-#     return
 def checkSuccess(total_snippets, string_list):
     """
     There is a delay in outputing transcription to file this loop runs until
@@ -448,11 +426,9 @@ def checkSuccess(total_snippets, string_list):
     return
 
 
-def organizeTemp(TEMP_FILE, string_list):
+def organizeTemp(string_list):
     output_list = string_list
-
     output_list.sort()
-    os.remove(TEMP_FILE)
 
 
 def transcribe(snippet, lang):
@@ -460,6 +436,7 @@ def transcribe(snippet, lang):
         file = open(snippet, "rb")
         transcription = openai.Audio.transcribe("whisper-1", file)
         text_string = transcription.text
+        # text_string = snippet
     except Exception:
         text_string = "!!!ERROR processing audio by OpenAI Whisper-1!!!"
 
@@ -494,7 +471,7 @@ def runTranscription(split_wav, thread_count, TEMP_FILE, total_snippets, lang, s
         with tqdm(total=pbar_total, leave=True, desc=" [+]Transcribing audio file") as pbar:
             working_list.append(split_wav[0])
             for snippet in working_list:
-                transcribeAudio(snippet, None, TEMP_FILE, total_snippets, pbar, lang, single_file=True)
+                transcribeAudio(snippet, None, STRING_LIST, total_snippets, pbar, lang, single_file=True)
     elif not single_file:
         snippets_to_complete = total_snippets
         snippets_completed = 0
@@ -511,7 +488,7 @@ def runTranscription(split_wav, thread_count, TEMP_FILE, total_snippets, lang, s
                 with ThreadPoolExecutor(max_workers=thread_count) as executor:
                     for snippet in working_list:
                         line_count += 1
-                        futures = executor.submit(transcribeAudio, snippet, line_count, TEMP_FILE, total_snippets, pbar, lang)
+                        futures = executor.submit(transcribeAudio, snippet, line_count, STRING_LIST, total_snippets, pbar, lang)
                         futures_list.append(futures)
 
                     for future in futures_list:
@@ -544,7 +521,11 @@ def mainAI():
                                    '\n -l --lang <languages to be converted (uk, ru, e.t...)' +
                                    '\n Splitting Options:' +
                                    '\n -s --silence <silence splitting>' +
+                                   '\n -a --api <API key by OpenAI> ' +
                                    '\n -i --interval ')
+
+    parser.add_option('-a', '--api',
+                      action='store', dest='api', type='string', help='API key by OpenAI')
 
     parser.add_option('-f', '--file',
                       action='store', dest='filename', type='string', help='specify target file', metavar="FILE")
@@ -579,6 +560,7 @@ def mainAI():
     silence_detection = options.silence
     lang = options.lang
     section_length = int(options.section_interval)
+    apikey = options.api
 
     if lang is None:
         print("[!]Default language is English!\n")
@@ -601,7 +583,7 @@ def mainAI():
                 exit()
 
     openai.organization = "org-cUglEaGuH6dQ1kt5uQ9Vtghi"
-    openai.api_key = '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'
+    openai.api_key = apikey
     try:
         openai.Model.list()
     except openai.error.AuthenticationError:
@@ -612,22 +594,6 @@ def mainAI():
     runOperations(INPUT_FILE, script_path, thread_count, keep_wav, silence_detection, lang, section_length)
 
 
-def testOperation():
-    openai.organization = "org-cUglEaGuH6dQ1kt5uQ9Vtghi"
-    openai.api_key = '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'
-    openai.Model.list()
-
-    file = open("Guittard.mp3", "rb")
-
-    song = AudioSegment.from_mp3("Guittard.mp3")
-    # PyDub handles time in milliseconds
-    ten_minutes = 1 * 60 * 1000
-    first_10_minutes = song[:ten_minutes]
-    first_10_minutes.export("Guittard-02_10.mp3", format="mp3")
-    transcription = openai.Audio.transcribe("whisper-1", file, verbose=True)
-    print(transcription.text)
-
-
 def print_hi(string):
     print(string)
 
@@ -636,5 +602,5 @@ def print_hi(string):
 if __name__ == '__main__':
     STRING_LIST = []
     mainAI()
-    # mainOperation()
-    print_hi('Hi there!')
+
+    print_hi('Ok!')
