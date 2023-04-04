@@ -594,13 +594,8 @@ def mainAI():
     runOperations(INPUT_FILE, script_path, thread_count, keep_wav, silence_detection, lang, section_length)
 
 
-def print_hi(string):
-    print(string)
-
-
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     STRING_LIST = []
     mainAI()
-
-    print_hi('Ok!')
+    print('Ok!')
