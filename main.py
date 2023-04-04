@@ -222,7 +222,7 @@ def getSnippets(TEMP_DIR):
     return split_wav, total_snippets
 
 
-def createOutput(FILENAME, STRING_LIST, script_path, total_snippets, section_starts):
+def createOutput(FILENAME, STRING_LIST, script_path, total_snippets, section_starts, lang='en'):
     OUTPUT_LIST = []
     TIMESTAMP = str(datetime.datetime.strftime(datetime.datetime.today(), '%Y%m%d-%H%M'))
     OUTPUT_FILENAME = FILENAME + "-" + TIMESTAMP + ".txt"
@@ -258,7 +258,10 @@ def createOutput(FILENAME, STRING_LIST, script_path, total_snippets, section_sta
 
     with open(script_path + "/" + OUTPUT_FILENAME, "a") as f:
         for line in OUTPUT_LIST:
-            f.write(line.encode('utf-8').decode('ascii', 'ignore'))
+            if lang is 'en':
+                f.write(line.encode('utf-8').decode('ascii', 'ignore'))
+            else:
+                f.write(line)
     f.close()
 
 
@@ -379,7 +382,7 @@ def runOperations(INPUT_FILE, script_path, thread_count, keep_wav, silence_detec
     organizeTemp(STRING_LIST)
 
     print(" [!]Transcription successful")
-    createOutput(input_file.filename, STRING_LIST, script_path, total_snippets, section_starts)
+    createOutput(input_file.filename, STRING_LIST, script_path, total_snippets, section_starts, lang)
 
     """
     Clean Up Operations
