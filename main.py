@@ -130,10 +130,10 @@ def extractAudio(FILE_TYPE, FILENAME, script_path):
     AUDIO_OUTPUT_FILE = FILENAME + "-EXTRACTED.wav"
     if os.path.isfile(script_path + '/' + AUDIO_OUTPUT_FILE):
         os.remove(script_path + '/' + AUDIO_OUTPUT_FILE)
-    # command = str(
-    #     "ffmpeg -i " + script_path + "/" + FILENAME + "." + FILE_TYPE + " -f wav -vn -ar 44100 -ac 2 -ab 192K " + script_path + "/" + AUDIO_OUTPUT_FILE)
-    command = str(
-        f'ffmpeg -i {script_path}/{FILENAME}.{FILE_TYPE} -f wav -vn -ar 44100 -ac 2 -ab 192K {script_path}/{AUDIO_OUTPUT_FILE}')
+
+    command = str(f'ffmpeg -i {script_path}/{FILENAME}.{FILE_TYPE} -f wav -vn -ar 44100 -ac 2 -ab 192K \
+                  {script_path}/{AUDIO_OUTPUT_FILE}')
+
     subprocess.call(command, shell=True)
     return AUDIO_OUTPUT_FILE
 
