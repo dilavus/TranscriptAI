@@ -1,4 +1,3 @@
-
 import os
 import shutil
 import subprocess
@@ -491,7 +490,8 @@ def runTranscription(split_wav, thread_count, TEMP_FILE, total_snippets, lang, s
                 with ThreadPoolExecutor(max_workers=thread_count) as executor:
                     for snippet in working_list:
                         line_count += 1
-                        futures = executor.submit(transcribeAudio, snippet, line_count, STRING_LIST, total_snippets, pbar, lang)
+                        futures = executor.submit(transcribeAudio, snippet, line_count, STRING_LIST, total_snippets,
+                                                  pbar, lang)
                         futures_list.append(futures)
 
                     for future in futures_list:
